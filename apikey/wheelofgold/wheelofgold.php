@@ -25,6 +25,7 @@ class Bot {
 		$this->uagent = Functions::setConfig("user_agent");
 		$this->iewil = new premium();
 		$this->scrap = new HtmlScrap();
+		$this->cf = new Cloudflare();
 		
 		Display::Ban(title, versi);
 		
@@ -178,6 +179,7 @@ class Bot {
 		}
 	}
 	private function Claim($coinss){
+		$retry = 0;
 		while(true){
 			$r = $this->Dashboard();
 			if($r['Logout']){
@@ -200,12 +202,29 @@ class Bot {
 					$this->Firewall();
 					continue;
 				}
+				
 				if($scrap['cloudflare']){
-					print Display::Error(host."faucet/currency/".$coin.n);
+					$cloudflare = 1;
 					print Display::Error("Cloudflare Detect\n");
 					Display::Line();
-					return 1;
+					print Display::Error("Bypass Cloudflare $retry");
+					$cf = $this->cf->BypassCf(host);
+					$this->cookie = $cf["cookie"];
+					$this->uagent = $cf["user-agent"];
+					sleep(2);
+					print "\r                              \r";
+					$retry ++;
+					if($retry > 3){
+						return 1;
+					}
+					continue;
 				}
+				if($cloudflare){
+					print Display::Sukses("Cloudflare bypassed");
+					Display::Line();
+					$cloudflare = false;
+				}
+				$retry = 0;
 				
 				// Mesasge
 				if(preg_match("/You don't have enough energy for Auto Faucet!/",$r)){exit(Error("You don't have enough energy for Auto Faucet!\n"));}
